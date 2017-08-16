@@ -175,3 +175,9 @@ timebased, use the `google-authenticator` binary to generate a secret key in
 your home directory with the proper option.  In this mode, clock skew is
 irrelevant and the window size option now applies to how many codes beyond the
 current one that would be accepted, to reduce synchronization problems.
+
+###中文版本
+Google Authentication 项目 包含了多个手机平台的一次性验证码生成器的实现，以及一个可插拔的验证认证模块（PAM）。这些实现支持基于 HMAC 的一次性验证码（HOTP）算法（RFC 4226）和基于时间的一次性验证码（TOTP）算法（RFC 6238）
+下面将在 CentOS 上安装并使用 Google Authenticator 做登录的身份验证，当前系统的版本为
+CentOS Linux release 7.2.1511 (Core)
+
