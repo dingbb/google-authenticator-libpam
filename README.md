@@ -193,4 +193,63 @@ ntpdate 是用来自动同步时间的程序，这里启动它并设置它开机
 yum install -y git make gcc libtool pam-devel
 
 3.编译安装 Google Authenticator PAM module
+git clone https://github.com/dingbb/google-authenticator-libpam
+cd google-authenticator-libpam
+./bootstrap.sh
+./configure
+make
+make install
+ln -s /usr/local/lib/security/pam_google_authenticator.so /usr/lib64/security/
+
+### 配置 SSH 服务
+打开 /etc/ssh/sshd_config 文件
+
+vim /etc/ssh/sshd_config
+修改下面字段的配置
+
+ChallengeResponseAuthentication yes
+PasswordAuthentication no
+PubkeyAuthentication yes
+UsePAM yes
+然后重启一下 sshd 服务，使配置生效
+
+systemctl restart sshd
+这里将 PubkeyAuthentication 配置成了 yes 表示支持公钥验证登录，即使某个账号启用了 Google Authenticator 验证，只要登录者机器的公钥在这个账号的授权下，就可以不输入密码和 Google Authenticator 的认证码直接登录。
+
+### 配置 PAM 
+打开 /etc/pam.d/sshd 文件
+
+vim /etc/pam.d/sshd
+这里分四种情况来配置
+
+验证密码和认证码，没有启用 Google Authenticator 服务的账号只验证密码（推荐）
+
+auth substack password-auth
+#...
+auth required pam_google_authenticator.so nullok
+password-auth 与 pam_google_authenticator 的先后顺序决定了先输入密码还是先输入认证码。
+
+验证密码和认证码，没有启用 Google Authenticator 服务的账号无法使用密码登录
+
+auth substack password-auth
+#...
+auth required pam_google_authenticator.so
+只验证认证码，不验证密码，没有启用 Google Authenticator 服务的账号不用输入密码直接可以成功登录
+
+#auth substack password-auth
+#...
+auth required pam_google_authenticator.so nullok
+注释掉 auth substack password-auth 配置就不会再验证账号密码了。
+
+只验证认证码，不验证密码，没有启用 Google Authenticator 服务的账号无法使用密码登录
+
+#auth substack password-auth
+#...
+auth required pam_google_authenticator.so
+
+### 启用 Google Authenticator
+切换至想要使用 Google Authenticator 来做登录验证的账号，执行下面命令
+google-authenticator
+然后会出现一个二维码 #二维码跟手机客户端软件做认证用
+或者手动输入后面的密钥（secret key）来代替扫描二维码，之后的操作会用到这个二维码/密钥（secret key）。这里还有一个认证码（verifiction code），暂时不知道有什么用，以及 5 个紧急救助码（emergency scratch code），紧急救助码就是当你无法获取认证码时（比如手机丢了），可以当做认证码来用，每用一个少一个，但其实可以手动添加的，建议如果 root 账户使用 Google Authenticator 的话一定要把紧急救助码另外保存一份。
 
